@@ -1,0 +1,56 @@
+# Таксономия навыков паспорта: 5 категорий, 2 уровня.
+# Уровни владения одинаковы для всех навыков:
+#   1 — познакомился, 2 — практикует, 3 — применяет (подпись наставника), 4 — учит других (подпись наставника)
+# esco — близкий навык из европейского классификатора ESCO, если он есть (для переносимости; маппинг уточняется в v2).
+categories:
+  tech:
+    name: Технологии
+    skills:
+      tech.python: {name: Программирование на Python}
+      tech.scratch: {name: Визуальное программирование (Scratch)}
+      tech.web: {name: Веб-разработка}
+      tech.gamedev: {name: Разработка игр}
+      tech.robotics: {name: Робототехника}
+      tech.electronics: {name: Электроника и схемотехника}
+      tech.ai: {name: Искусственный интеллект и анализ данных}
+      tech.3d: {name: 3D-моделирование и печать}
+      tech.drones: {name: Беспилотники}
+  science:
+    name: Наука и исследования
+    skills:
+      science.math: {name: Математика}
+      science.physics: {name: Физика в эксперименте}
+      science.biology: {name: Биология и экология}
+      science.chemistry: {name: Химия}
+      science.research: {name: Исследовательский метод}
+      science.astronomy: {name: Астрономия}
+  creative:
+    name: Творчество
+    skills:
+      creative.design: {name: Графический дизайн}
+      creative.video: {name: Видео и монтаж}
+      creative.music: {name: Музыка}
+      creative.theatre: {name: Театр и сценическая речь}
+      creative.writing: {name: Тексты и журналистика}
+      creative.drawing: {name: Рисование и иллюстрация}
+  social:
+    name: Личные и командные навыки
+    skills:
+      social.teamwork: {name: Работа в команде}
+      social.leadership: {name: Лидерство}
+      social.presentation: {name: Публичные выступления}
+      social.project_mgmt: {name: Управление проектом}
+      social.english: {name: Английский язык}
+      social.entrepreneurship: {name: Предпринимательство}
+      social.critical_thinking: {name: Критическое мышление}
+  activity:
+    name: Активность и спорт
+    # Навыки активности выводятся только из недельных агрегатов браслета и только при согласии 'activity'.
+    skills:
+      activity.regularity: {name: Регулярная физическая активность}
+      activity.endurance: {name: Выносливость}
+      activity.team_sports: {name: Командные виды спорта}
+      activity.swimming: {name: Плавание}
+      activity.martial_arts: {name: Единоборства}
+      activity.outdoor: {name: Туризм и ориентирование}
+      activity.sleep_routine: {name: Режим сна}

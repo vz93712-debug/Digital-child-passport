@@ -1,0 +1,222 @@
+asyncapi: 3.0.0
+info:
+  title: SportZania — события цифрового паспорта ребёнка
+  version: 0.1.0
+  description: |
+    Ключевые события, которые наполняют паспорт и которые паспорт публикует сам.
+    Все события идут через topic exchange `platform.events` в RabbitMQ
+    в общем конверте (Envelope); routing key совпадает с адресом канала.
+    Паспорт читает их из своей очереди `passport.ingest`, проверяет схему,
+    дедуплицирует по event_id, переводит child_ref в child_id и пропускает через consent gate.
+    Полный каталог (15 входящих типов) — в passport/events.py.
+
+servers:
+  rabbitmq:
+    host: rabbitmq.platform.internal:5672
+    protocol: amqp
+    protocolVersion: 0.9.1
+    description: RabbitMQ платформы (внутренний контур Kubernetes)
+
+defaultContentType: application/json
+
+channels:
+  lessonCompleted:
+    address: lesson.completed
+    description: Онлайн-школа (через transactional outbox) — ученик завершил урок.
+    messages:
+      lessonCompleted:
+        $ref: '#/components/messages/LessonCompleted'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: {name: platform.events, type: topic, durable: true, autoDelete: false, vhost: /}
+        bindingVersion: 0.3.0
+
+  mentorReviewAdded:
+    address: mentor.review.added
+    description: Ядро лагеря или онлайн-школа — наставник оставил подписанный отзыв.
+    messages:
+      mentorReviewAdded:
+        $ref: '#/components/messages/MentorReviewAdded'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: {name: platform.events, type: topic, durable: true, autoDelete: false, vhost: /}
+        bindingVersion: 0.3.0
+
+  projectSubmitted:
+    address: project.submitted
+    description: Проектный модуль — команда сдала проект.
+    messages:
+      projectSubmitted:
+        $ref: '#/components/messages/ProjectSubmitted'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: {name: platform.events, type: topic, durable: true, autoDelete: false, vhost: /}
+        bindingVersion: 0.3.0
+
+  consentRevoked:
+    address: consent.revoked
+    description: |
+      Сервис согласий — родитель отозвал согласие на цель. Паспорт сразу перестаёт
+      принимать события этой цели и удаляет накопленные по ней данные в течение 30 дней.
+    messages:
+      consentRevoked:
+        $ref: '#/components/messages/ConsentRevoked'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: {name: platform.events, type: topic, durable: true, autoDelete: false, vhost: /}
+        bindingVersion: 0.3.0
+
+  skillLevelChanged:
+    address: passport.skill.level.changed
+    description: Паспорт — у ребёнка изменился уровень навыка. Слушают рекомендатель и уведомления.
+    messages:
+      skillLevelChanged:
+        $ref: '#/components/messages/SkillLevelChanged'
+    bindings:
+      amqp:
+        is: routingKey
+        exchange: {name: platform.events, type: topic, durable: true, autoDelete: false, vhost: /}
+        bindingVersion: 0.3.0
+
+operations:
+  receiveLessonCompleted:
+    action: receive
+    channel: {$ref: '#/channels/lessonCompleted'}
+    summary: Паспорт начисляет очки доказательства навыкам курса.
+  receiveMentorReviewAdded:
+    action: receive
+    channel: {$ref: '#/channels/mentorReviewAdded'}
+    summary: Паспорт сохраняет наблюдение; подпись может подтвердить уровень 3–4.
+  receiveProjectSubmitted:
+    action: receive
+    channel: {$ref: '#/channels/projectSubmitted'}
+    summary: Паспорт создаёт паспорт проекта и роль ребёнка в команде.
+  receiveConsentRevoked:
+    action: receive
+    channel: {$ref: '#/channels/consentRevoked'}
+    summary: Паспорт закрывает consent gate по цели и запускает удаление данных цели.
+  sendSkillLevelChanged:
+    action: send
+    channel: {$ref: '#/channels/skillLevelChanged'}
+    summary: Паспорт публикует новое значение уровня навыка.
+
+components:
+  messages:
+    LessonCompleted:
+      name: LessonCompleted
+      payload:
+        $ref: '#/components/schemas/LessonCompletedEnvelope'
+    MentorReviewAdded:
+      name: MentorReviewAdded
+      payload:
+        $ref: '#/components/schemas/MentorReviewAddedEnvelope'
+    ProjectSubmitted:
+      name: ProjectSubmitted
+      payload:
+        $ref: '#/components/schemas/ProjectSubmittedEnvelope'
+    ConsentRevoked:
+      name: ConsentRevoked
+      payload:
+        $ref: '#/components/schemas/ConsentRevokedEnvelope'
+    SkillLevelChanged:
+      name: SkillLevelChanged
+      payload:
+        $ref: '#/components/schemas/SkillLevelChangedEnvelope'
+
+  schemas:
+    Envelope:
+      type: object
+      required: [event_id, event_type, schema_version, source, child_ref, occurred_at, payload]
+      properties:
+        event_id: {type: string, format: uuid, description: Ключ дедупликации}
+        event_type: {type: string}
+        schema_version: {type: integer, minimum: 1}
+        source:
+          type: string
+          description: camp_core | online_school | projects | telemetry | partner:<issuer_id> | passport
+        child_ref: {type: string, description: ID ребёнка в системе-источнике}
+        occurred_at: {type: string, format: date-time}
+        payload: {type: object}
+
+    LessonCompletedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            event_type: {const: LessonCompleted}
+            payload:
+              type: object
+              required: [lesson_id, course_id, duration_min]
+              properties:
+                lesson_id: {type: string}
+                course_id: {type: string, examples: [course.python-start]}
+                duration_min: {type: integer, minimum: 1}
+
+    MentorReviewAddedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            event_type: {const: MentorReviewAdded}
+            payload:
+              type: object
+              required: [review_id, program_id, author_sub, text, skill_ids, signature]
+              properties:
+                review_id: {type: string}
+                program_id: {type: string}
+                author_sub: {type: string, description: keycloak_sub наставника}
+                text: {type: string, description: Шифруется ключом ребёнка при сохранении}
+                skill_ids: {type: array, items: {type: string}}
+                confirms_level: {type: integer, minimum: 3, maximum: 4}
+                signature: {type: string, description: 'Ed25519-подпись наставника над review_id, skill_ids и confirms_level'}
+
+    ProjectSubmittedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            event_type: {const: ProjectSubmitted}
+            payload:
+              type: object
+              required: [project_id, program_id, title, goal, role]
+              properties:
+                project_id: {type: string}
+                program_id: {type: string}
+                title: {type: string}
+                goal: {type: string}
+                result_url: {type: string, format: uri}
+                role: {type: string, examples: [капитан, программист, дизайнер]}
+                team_child_refs: {type: array, items: {type: string}}
+
+    ConsentRevokedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            event_type: {const: ConsentRevoked}
+            payload:
+              type: object
+              required: [consent_id, purpose]
+              properties:
+                consent_id: {type: string}
+                purpose: {type: string, enum: [passport, activity, recommendations, share_partner, export]}
+
+    SkillLevelChangedEnvelope:
+      allOf:
+        - $ref: '#/components/schemas/Envelope'
+        - type: object
+          properties:
+            event_type: {const: SkillLevelChanged}
+            source: {const: passport}
+            payload:
+              type: object
+              required: [skill_id, old_level, new_level, max_trust_level]
+              properties:
+                skill_id: {type: string, examples: [tech.python]}
+                old_level: {type: integer, minimum: 0, maximum: 4}
+                new_level: {type: integer, minimum: 0, maximum: 4}
+                max_trust_level: {type: integer, minimum: 0, maximum: 3}

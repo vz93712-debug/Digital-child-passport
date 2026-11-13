@@ -1,0 +1,74 @@
+# Правила деривации: как сырые события превращаются в навыки и достижения.
+#
+# Меняются без релиза сервиса: при смене правил проектор перечитывает журнал событий
+# и пересобирает ChildSkill (журнал — источник истины, проекции — производные).
+#
+# Навыки события берутся из skill_tags программы (data/catalog.json),
+# если в самом событии нет явного списка skill_ids.
+
+version: 1
+
+# 1. Сколько очков доказательства даёт событие каждому своему навыку и с каким уровнем доверия.
+#    trust: 1 — подтвердила система, 2 — подтвердил человек (наставник), issuer — по тиру эмитента-партнёра.
+evidence:
+  LessonCompleted:      {points: 1,   trust: 1}
+  TestPassed:           {points: score_pct / 25, trust: 1, min_score_pct: 60}   # 60% → 2.4, 100% → 4
+  CourseCompleted:      {points: 5,   trust: 1}
+  BookingConfirmed:     {points: 0,   trust: 1, adds_interests: true}           # бронь говорит об интересе, не о навыке
+  ShiftCompleted:       {points: 5,   trust: 1, min_attendance: 0.8}
+  ProjectSubmitted:     {points: 3,   trust: 1}
+  ProjectReviewed:      {points: 6,   trust: 2, only_if: accepted}
+  MentorReviewAdded:    {points: 2,   trust: 2}
+  PartnerParticipationReported: {points: 3, trust: issuer, only_if_status: completed}
+  PartnerAchievementSubmitted:  {points: 4, trust: issuer}
+  ActivityWeeklySummarized:
+    # Только навыки активности и только дискретные уровни. Координат, пульса и минут здесь нет.
+    skills:
+      activity.regularity:    {irregular: 0, regular: 1, very_regular: 2}
+      activity.sleep_routine: {irregular: 0, regular: 1}
+    trust: 1
+
+# 2. Пороги уровней. Уровень — максимальный, условия которого выполнены.
+levels:
+  1: {name: познакомился, min_points: 2}
+  2: {name: практикует,   min_points: 8}
+  3: {name: применяет,    min_points: 15, requires_mentor_confirmation: 3}
+  4: {name: учит других,  min_points: 25, requires_mentor_confirmation: 4}
+
+# Навыки активности не поднимаются выше 2: паспорт не оценивает тело ребёнка.
+level_caps:
+  activity.*: 2
+
+# 3. Когда выпускается достижение (Achievement) и с каким уровнем доверия.
+achievements:
+  - on: CourseCompleted
+    type: course_completion
+    title: "Курс «{program_title}» пройден"
+    criteria: "Пройдены все уроки курса{score_suffix}"
+    trust_level: 1
+  - on: ShiftCompleted
+    type: shift_completion
+    title: "Участник: {program_title}"
+    criteria: "Посещено не менее 80% дней смены"
+    trust_level: 1
+    only_if: attendance >= 0.8
+  - on: ProjectReviewed
+    type: project
+    title: "Проект «{project_title}»"
+    criteria: "Проект защищён и принят наставником"
+    trust_level: 2
+    only_if: accepted
+  - on: SkillLevelReached        # внутреннее событие проектора
+    type: skill_level
+    title: "{skill_name}: уровень {level}"
+    criteria: "Уровень {level} ({level_name}) подтверждён наставником"
+    trust_level: 2
+    only_if: level >= 3
+  - on: PartnerAchievementSubmitted
+    type: award
+    title: "{title}"
+    criteria: "{criteria}"
+    trust_level: issuer          # 3 — подписано ключом аккредитованного партнёра, 1 — без подписи
+
+# 4. Вес уровня доверия в рекомендациях (используется рекомендателем).
+trust_weights: {0: 0.25, 1: 0.6, 2: 1.0, 3: 1.0}

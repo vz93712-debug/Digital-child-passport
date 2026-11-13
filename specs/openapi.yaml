@@ -1,0 +1,501 @@
+openapi: 3.1.0
+info:
+  title: SportZania — API цифрового паспорта ребёнка
+  version: 0.1.0
+  description: |
+    Шесть ключевых эндпоинтов: подключение лагеря-партнёра, чтение паспорта,
+    согласия и публичная проверка бейджей.
+
+    **Партнёры** авторизуются через OAuth 2.0 client credentials в Keycloak.
+    Каждый партнёр видит только детей, которых ему привязал родитель кодом,
+    и только категории, на которые есть согласие `share_partner`.
+
+    **Идемпотентность.** Все POST партнёров принимают заголовок `Idempotency-Key`:
+    повтор с тем же ключом возвращает исходный ответ и не создаёт дублей.
+
+    **ФИО через API не передаются.** Ребёнок у партнёра идентифицируется только `child_ref`.
+  contact:
+    name: Команда паспорта
+  license:
+    name: CC BY 4.0
+    url: https://creativecommons.org/licenses/by/4.0/
+servers:
+  - url: https://api.sportzania.example/passport
+    description: Пример адреса (данные хранятся в РФ)
+
+security:
+  - partnerOAuth: []
+
+tags:
+  - name: partner
+    description: Для сторонних лагерей (B2B)
+  - name: passport
+    description: Для приложений ребёнка, родителя и сотрудников
+  - name: consent
+    description: Кабинет родителя
+  - name: verify
+    description: Публичная проверка бейджа по QR
+
+paths:
+  /v1/partner/children/link:
+    post:
+      tags: [partner]
+      operationId: linkChild
+      summary: Привязать ребёнка по одноразовому коду родителя
+      description: |
+        Родитель в своём кабинете выбирает лагерь, категории данных и получает
+        одноразовый код (действует 72 часа). Лагерь обменивает код на `child_ref`.
+        Одним шагом решаются склейка личности и согласие на передачу данных.
+      security:
+        - partnerOAuth: [partner.children.link]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [link_code, partner_child_id]
+              properties:
+                link_code: {type: string, pattern: '^[A-Z0-9]{8}$', example: K7Q2M9XA}
+                partner_child_id: {type: string, description: 'ID ребёнка в системе лагеря', example: 'sosny-2027-0153'}
+      responses:
+        '200':
+          description: Ребёнок привязан
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [child_ref, age_band, shared_categories, consent_expires_at]
+                properties:
+                  child_ref: {type: string, description: 'Псевдоним ребёнка, уникальный для этого партнёра', example: 'cr_9f2a1c'}
+                  display_name: {type: string, example: Маша}
+                  age_band: {$ref: '#/components/schemas/AgeBand'}
+                  shared_categories:
+                    type: array
+                    items: {$ref: '#/components/schemas/Category'}
+                  consent_expires_at: {type: string, format: date-time}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '410':
+          description: Код просрочен или уже использован
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /v1/partner/participations:
+    post:
+      tags: [partner]
+      operationId: reportParticipation
+      summary: Сообщить об участии ребёнка в смене
+      security:
+        - partnerOAuth: [partner.participations.write]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PartnerParticipation'}
+      responses:
+        '202': {$ref: '#/components/responses/Accepted'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/NoConsent'}
+        '409': {$ref: '#/components/responses/IdempotencyConflict'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+
+  /v1/partner/achievements:
+    post:
+      tags: [partner]
+      operationId: submitAchievement
+      summary: Передать достижение ребёнка
+      description: |
+        Два варианта:
+        * `credential_jws` — Open Badge 3.0, подписанный ключом лагеря из реестра эмитентов → уровень доверия **L3**;
+        * без подписи (только поля) → уровень **L1**, в паспорте помечается «сообщено лагерем, не подписано».
+
+        Паспорт проверяет подпись, статус эмитента, список отзыва и то, что ребёнок
+        действительно был на смене (`program_id` + участие).
+      security:
+        - partnerOAuth: [partner.achievements.write]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PartnerAchievement'}
+      responses:
+        '202':
+          description: Принято в обработку
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [achievement_id, trust_level]
+                properties:
+                  achievement_id: {type: string, format: uuid}
+                  trust_level: {$ref: '#/components/schemas/TrustLevel'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/NoConsent'}
+        '409': {$ref: '#/components/responses/IdempotencyConflict'}
+        '422':
+          description: Подпись не прошла проверку, эмитент приостановлен или ребёнок не был на смене
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+
+  /v1/children/{child_id}/passport:
+    get:
+      tags: [passport]
+      operationId: getPassport
+      summary: Паспорт ребёнка глазами текущей роли
+      description: |
+        Ответ собирается по матрице доступа (passport/access.py): роль из токена Keycloak,
+        область «свои дети», согласия на цели и правила видимости.
+        Скрытые ребёнком элементы родитель-подростка видит как `{hidden: true}`.
+        Каждое обращение не к своему паспорту пишется в журнал аудита.
+      security:
+        - userOAuth: [passport.read]
+      parameters:
+        - name: child_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+        - name: purpose
+          in: query
+          required: false
+          description: Цель обращения для журнала аудита (обязательна для сотрудников)
+          schema: {type: string, enum: [own_view, shift_work, course_work, admin_support]}
+      responses:
+        '200':
+          description: Паспорт (только разрешённые роли категории)
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PassportView'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403':
+          description: Нет доступа к этому ребёнку
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/Problem'}
+        '410':
+          description: Паспорт удалён или находится в процессе удаления
+
+  /v1/consents:
+    post:
+      tags: [consent]
+      operationId: grantConsent
+      summary: Выдать согласие на цель
+      description: |
+        Подписание простой электронной подписью: код из SMS, отправленный на телефон
+        законного представителя. Сохраняется версия текста и хэш подписанного документа.
+      security:
+        - userOAuth: [consent.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ConsentRequest'}
+      responses:
+        '201':
+          description: Согласие выдано
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Consent'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403':
+          description: Пользователь не законный представитель ребёнка
+
+  /v1/consents/{consent_id}:
+    delete:
+      tags: [consent]
+      operationId: revokeConsent
+      summary: Отозвать согласие
+      description: |
+        Сразу закрывает приём данных по цели; накопленные по цели данные удаляются
+        не позже чем через 30 дней (ст. 21 ч. 5 152-ФЗ). Отзыв `passport` запускает полное удаление.
+      security:
+        - userOAuth: [consent.write]
+      parameters:
+        - name: consent_id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+      responses:
+        '200':
+          description: Согласие отозвано
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [consent_id, purpose, purge_deadline]
+                properties:
+                  consent_id: {type: string, format: uuid}
+                  purpose: {$ref: '#/components/schemas/Purpose'}
+                  purge_deadline: {type: string, format: date-time}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /v1/credentials/{credential_id}/verify:
+    get:
+      tags: [verify]
+      operationId: verifyCredential
+      summary: Публичная проверка бейджа (сюда ведёт QR-код)
+      description: |
+        Без авторизации. Отдаёт минимум: название, эмитент, дата, имя без фамилии и статус.
+        Проверяются подпись Ed25519, статус эмитента и список отзыва.
+      security: []
+      parameters:
+        - name: credential_id
+          in: path
+          required: true
+          schema: {type: string, example: 'urn:uuid:3f1c2a7e-8b4d-4c1a-9e2f-5a6b7c8d9e0f'}
+      responses:
+        '200':
+          description: Результат проверки
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/VerificationResult'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '429': {$ref: '#/components/responses/TooManyRequests'}
+
+components:
+  securitySchemes:
+    partnerOAuth:
+      type: oauth2
+      description: Keycloak, клиент лагеря-партнёра
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.sportzania.example/realms/platform/protocol/openid-connect/token
+          scopes:
+            partner.children.link: Привязка ребёнка по коду родителя
+            partner.participations.write: Передача участия в сменах
+            partner.achievements.write: Передача достижений
+    userOAuth:
+      type: oauth2
+      description: Keycloak, пользователи (ребёнок, родитель, сотрудники)
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.sportzania.example/realms/platform/protocol/openid-connect/auth
+          tokenUrl: https://auth.sportzania.example/realms/platform/protocol/openid-connect/token
+          scopes:
+            passport.read: Чтение паспорта в рамках роли
+            consent.write: Управление согласиями (только законный представитель)
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Уникальный ключ запроса (UUID); повтор с тем же ключом вернёт исходный ответ
+      schema: {type: string, format: uuid}
+
+  responses:
+    Accepted:
+      description: Принято в обработку (событие опубликовано в шину)
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [event_id]
+            properties:
+              event_id: {type: string, format: uuid}
+    BadRequest:
+      description: Ошибка в теле запроса
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Unauthorized:
+      description: Нет или просрочен токен
+    NotFound:
+      description: Не найдено
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    NoConsent:
+      description: Ребёнок не привязан к этому лагерю или нет согласия на категорию
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    IdempotencyConflict:
+      description: Тот же Idempotency-Key пришёл с другим телом
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    TooManyRequests:
+      description: Превышен лимит запросов
+      headers:
+        Retry-After:
+          schema: {type: integer}
+
+  schemas:
+    AgeBand:
+      type: string
+      enum: ['4-9', '10-13', '14-17']
+    Category:
+      type: string
+      enum: [profile, skills, achievements, observations, projects, activity, recommendations, consents]
+    Purpose:
+      type: string
+      enum: [passport, activity, recommendations, share_partner, export]
+    TrustLevel:
+      type: integer
+      minimum: 0
+      maximum: 3
+      description: 0 — самозаявление, 1 — система или неподписанные данные партнёра, 2 — наставник SportZania, 3 — подпись аккредитованного партнёра
+
+    PartnerParticipation:
+      type: object
+      required: [child_ref, program_id, starts_on, status]
+      properties:
+        child_ref: {type: string, example: cr_9f2a1c}
+        program_id: {type: string, description: 'ID смены из каталога партнёра, зарегистрированного в паспорте', example: 'partner.sosny.drones'}
+        starts_on: {type: string, format: date, example: '2027-07-01'}
+        ends_on: {type: string, format: date, example: '2027-07-21'}
+        status: {type: string, enum: [planned, active, completed, cancelled]}
+
+    PartnerAchievement:
+      type: object
+      required: [child_ref, program_id]
+      properties:
+        child_ref: {type: string}
+        program_id: {type: string}
+        credential_jws:
+          type: string
+          description: Open Badge 3.0 (Verifiable Credential), подписанный Ed25519-ключом лагеря
+        title: {type: string, description: 'Обязательно, если нет credential_jws', example: 'Пилот беспилотника — базовый уровень'}
+        criteria: {type: string, example: Выполнены 5 учебных полётов и сдан зачёт инструктору}
+        skill_ids:
+          type: array
+          items: {type: string, example: tech.drones}
+      anyOf:
+        - required: [credential_jws]
+        - required: [title, criteria, skill_ids]
+
+    PassportView:
+      type: object
+      required: [child_id, viewer_role, profile]
+      properties:
+        child_id: {type: string, format: uuid}
+        viewer_role: {type: string, enum: [child, guardian, counselor, teacher, camp_admin, partner]}
+        profile:
+          type: object
+          properties:
+            display_name: {type: string}
+            age_band: {$ref: '#/components/schemas/AgeBand'}
+            interests: {type: array, items: {type: string}}
+        skills:
+          type: array
+          items:
+            type: object
+            required: [skill_id, level, max_trust_level]
+            properties:
+              skill_id: {type: string}
+              name: {type: string}
+              level: {type: integer, minimum: 0, maximum: 4}
+              max_trust_level: {$ref: '#/components/schemas/TrustLevel'}
+        achievements:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/AchievementView'
+              - $ref: '#/components/schemas/HiddenItem'
+        projects:
+          type: array
+          items: {type: object}
+        activity:
+          type: array
+          items:
+            type: object
+            properties:
+              week_start: {type: string, format: date}
+              activity_level: {type: string, enum: [low, medium, high]}
+              regularity: {type: string, enum: [irregular, regular, very_regular]}
+        recommendations:
+          type: array
+          items:
+            type: object
+            properties:
+              program_id: {type: string}
+              title: {type: string}
+              score: {type: number}
+              explanation: {type: string, example: 'Маша закончила курс Python (подтверждено преподавателем) и интересуется робототехникой'}
+        denied_categories:
+          type: array
+          description: Категории, скрытые от этой роли (без причин, чтобы не раскрывать данные)
+          items: {$ref: '#/components/schemas/Category'}
+
+    AchievementView:
+      type: object
+      required: [achievement_id, title, trust_level, issuer_name, issued_at]
+      properties:
+        achievement_id: {type: string, format: uuid}
+        title: {type: string}
+        criteria: {type: string}
+        trust_level: {$ref: '#/components/schemas/TrustLevel'}
+        issuer_name: {type: string}
+        issued_at: {type: string, format: date-time}
+        credential_id: {type: string}
+
+    HiddenItem:
+      type: object
+      required: [hidden]
+      properties:
+        hidden: {type: boolean, const: true}
+        hidden_by: {type: string, const: child}
+
+    ConsentRequest:
+      type: object
+      required: [child_id, purpose, text_version, sms_code]
+      properties:
+        child_id: {type: string, format: uuid}
+        purpose: {$ref: '#/components/schemas/Purpose'}
+        text_version: {type: string, example: v1}
+        sms_code: {type: string, pattern: '^[0-9]{4,6}$'}
+        data_categories:
+          type: array
+          items: {$ref: '#/components/schemas/Category'}
+        partner_issuer_id: {type: string, format: uuid}
+        expires_at: {type: string, format: date-time}
+
+    Consent:
+      type: object
+      required: [consent_id, purpose, text_version, document_ref, granted_at]
+      properties:
+        consent_id: {type: string, format: uuid}
+        purpose: {$ref: '#/components/schemas/Purpose'}
+        text_version: {type: string}
+        document_ref: {type: string, description: SHA-256 подписанного документа}
+        granted_at: {type: string, format: date-time}
+        expires_at: {type: string, format: date-time}
+
+    VerificationResult:
+      type: object
+      required: [status, checks]
+      properties:
+        status: {type: string, enum: [valid, revoked, invalid, issuer_suspended]}
+        title: {type: string, example: 'Python: уровень 3'}
+        issuer_name: {type: string, example: 'SportZania: онлайн-школа'}
+        holder_display_name: {type: string, example: Маша}
+        issued_at: {type: string, format: date}
+        checks:
+          type: object
+          properties:
+            signature: {type: boolean}
+            issuer_active: {type: boolean}
+            not_revoked: {type: boolean}
+
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      required: [type, title, status]
+      properties:
+        type: {type: string, format: uri}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}

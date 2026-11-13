@@ -1,0 +1,163 @@
+%% ER-диаграмма цифрового паспорта ребёнка (Mermaid).
+%% Рендер: https://mermaid.live или `npx @mermaid-js/mermaid-cli -i er.mmd -o er.svg`
+%% Здоровье и геопозиция в паспорт не входят: они в модуле лагеря и контуре телеметрии.
+erDiagram
+    CHILD ||--|| CHILD_PII : "ФИО отдельно (pii)"
+    CHILD ||--o{ CHILD_GUARDIAN : ""
+    GUARDIAN ||--o{ CHILD_GUARDIAN : "законный представитель"
+    CHILD ||--o{ EXTERNAL_IDENTITY : "склейка профилей"
+    CHILD ||--o{ PARTICIPATION : "участвует"
+    PROGRAM ||--o{ PARTICIPATION : ""
+    ISSUER ||--o{ PROGRAM : "проводит"
+    ISSUER ||--o{ PARTICIPATION : "сообщает"
+    CHILD ||--o{ CHILD_SKILL : "версии SCD2"
+    SKILL ||--o{ CHILD_SKILL : ""
+    SKILL ||--o{ SKILL : "дерево"
+    CHILD ||--o{ ACHIEVEMENT : ""
+    ISSUER ||--o{ ACHIEVEMENT : "подписывает"
+    PARTICIPATION ||--o{ ACHIEVEMENT : "доказательство"
+    PARTICIPATION ||--o{ MENTOR_OBSERVATION : ""
+    CHILD ||--o{ MENTOR_OBSERVATION : ""
+    PROJECT_PASSPORT ||--|{ PROJECT_MEMBER : ""
+    CHILD ||--o{ PROJECT_MEMBER : "роль в команде"
+    CHILD ||--o{ ACTIVITY_SUMMARY : "только при согласии"
+    CHILD ||--o{ RECOMMENDATION : "только при согласии"
+    PROGRAM ||--o{ RECOMMENDATION : "рекомендуется"
+    CHILD ||--o{ CONSENT : ""
+    GUARDIAN ||--o{ CONSENT : "даёт и отзывает"
+    CHILD ||--o{ VISIBILITY_RULE : "право скрыть"
+    CHILD ||--o{ PASSPORT_EVENT : "журнал, append-only"
+
+    CHILD {
+        uuid child_id PK
+        smallint birth_year
+        text age_band "4-9 / 10-13 / 14-17"
+        text display_name
+        text_arr interests
+        text status
+        uuid key_id "ключ для crypto-shredding"
+    }
+    CHILD_PII {
+        uuid child_id PK
+        bytea full_name_enc
+        bytea birth_date_enc
+    }
+    GUARDIAN {
+        uuid guardian_id PK
+        text keycloak_sub
+    }
+    CHILD_GUARDIAN {
+        uuid child_id PK
+        uuid guardian_id PK
+        text relation
+        timestamptz verified_at
+    }
+    EXTERNAL_IDENTITY {
+        text source_system PK
+        text external_id PK
+        uuid child_id FK
+        text link_method
+    }
+    ISSUER {
+        uuid issuer_id PK
+        text type "camp_core / online_school / partner_camp"
+        smallint trust_tier
+        text public_key
+        text status
+    }
+    PROGRAM {
+        text program_id PK
+        text kind "shift / course / project_track"
+        text_arr skill_tags
+        smallint target_level
+        smallint age_min
+        smallint age_max
+    }
+    PARTICIPATION {
+        uuid participation_id PK
+        uuid child_id FK
+        text program_id FK
+        uuid issuer_id FK
+        date started_at
+        text status
+    }
+    SKILL {
+        text skill_id PK
+        text category
+        text parent_id FK
+        text esco_uri
+    }
+    CHILD_SKILL {
+        uuid child_id PK
+        text skill_id PK
+        timestamptz valid_from PK
+        smallint level "0-4"
+        smallint max_trust_level
+        timestamptz valid_to
+    }
+    ACHIEVEMENT {
+        uuid achievement_id PK
+        uuid child_id FK
+        uuid issuer_id FK
+        smallint trust_level "L0-L3"
+        text criteria
+        text credential_jws "Open Badges 3.0"
+        timestamptz revoked_at
+    }
+    PROJECT_PASSPORT {
+        uuid project_id PK
+        text title
+        text goal
+        text result_url
+        text mentor_sub
+    }
+    PROJECT_MEMBER {
+        uuid project_id PK
+        uuid child_id PK
+        text role
+    }
+    MENTOR_OBSERVATION {
+        uuid observation_id PK
+        uuid child_id FK
+        uuid participation_id FK
+        bytea text_enc
+        text signature
+    }
+    ACTIVITY_SUMMARY {
+        uuid child_id PK
+        date week_start PK
+        text activity_level "low / medium / high"
+        text regularity
+    }
+    RECOMMENDATION {
+        uuid child_id PK
+        timestamptz generated_at PK
+        smallint rank PK
+        text program_id FK
+        jsonb components
+        text_array reasons
+        text model_version
+    }
+    CONSENT {
+        uuid consent_id PK
+        uuid child_id FK
+        uuid guardian_id FK
+        text purpose
+        text text_version
+        timestamptz revoked_at
+    }
+    VISIBILITY_RULE {
+        uuid child_id PK
+        text item_type PK
+        text item_id PK
+        text_arr hidden_from
+        text set_by
+    }
+    PASSPORT_EVENT {
+        uuid event_id PK
+        uuid child_id FK
+        text event_type
+        smallint schema_version
+        bytea payload_enc
+        bigint seq
+    }

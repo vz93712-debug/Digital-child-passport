@@ -1,0 +1,550 @@
+{
+  "issuers": [
+    {
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "name": "SportZania: лагеря",
+      "type": "camp_core",
+      "trust_tier": 2
+    },
+    {
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "name": "SportZania: онлайн-школа",
+      "type": "online_school",
+      "trust_tier": 2
+    },
+    {
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "name": "SportZania: проекты",
+      "type": "projects",
+      "trust_tier": 2
+    },
+    {
+      "issuer_id": "00000000-0000-4000-8000-000000000101",
+      "name": "Лагерь «Сосновый берег» (партнёр)",
+      "type": "partner_camp",
+      "trust_tier": 3
+    },
+    {
+      "issuer_id": "00000000-0000-4000-8000-000000000102",
+      "name": "Лагерь «Волна» (партнёр без ключа)",
+      "type": "partner_camp",
+      "trust_tier": 1
+    }
+  ],
+  "programs": [
+    {
+      "program_id": "shift.robots-ai",
+      "kind": "shift",
+      "title": "Смена «ИИ и роботы»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "tech.robotics",
+        "tech.ai",
+        "social.teamwork"
+      ],
+      "target_level": 3,
+      "age_min": 10,
+      "age_max": 15,
+      "format": "offline",
+      "starts_on": "2027-06-02",
+      "ends_on": "2027-06-22"
+    },
+    {
+      "program_id": "shift.young-engineer",
+      "kind": "shift",
+      "title": "Смена «Юный инженер»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "tech.electronics",
+        "tech.3d",
+        "science.physics"
+      ],
+      "target_level": 2,
+      "age_min": 8,
+      "age_max": 12,
+      "format": "offline",
+      "starts_on": "2027-06-25",
+      "ends_on": "2027-07-15"
+    },
+    {
+      "program_id": "shift.it-camp",
+      "kind": "shift",
+      "title": "IT-смена «Код лета»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "tech.python",
+        "tech.web",
+        "social.project_mgmt"
+      ],
+      "target_level": 3,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "offline",
+      "starts_on": "2027-07-18",
+      "ends_on": "2027-08-07"
+    },
+    {
+      "program_id": "shift.gamedev",
+      "kind": "shift",
+      "title": "Смена «Создай свою игру»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "tech.gamedev",
+        "creative.design",
+        "social.teamwork"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 14,
+      "format": "offline",
+      "starts_on": "2027-08-10",
+      "ends_on": "2027-08-30"
+    },
+    {
+      "program_id": "shift.science-lab",
+      "kind": "shift",
+      "title": "Смена «Научная лаборатория»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "science.research",
+        "science.chemistry",
+        "science.biology"
+      ],
+      "target_level": 2,
+      "age_min": 9,
+      "age_max": 14,
+      "format": "offline",
+      "starts_on": "2027-06-02",
+      "ends_on": "2027-06-22"
+    },
+    {
+      "program_id": "shift.media",
+      "kind": "shift",
+      "title": "Медиасмена «В кадре»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "creative.video",
+        "creative.writing",
+        "social.presentation"
+      ],
+      "target_level": 2,
+      "age_min": 11,
+      "age_max": 17,
+      "format": "offline",
+      "starts_on": "2027-07-18",
+      "ends_on": "2027-08-07"
+    },
+    {
+      "program_id": "shift.sport-leaders",
+      "kind": "shift",
+      "title": "Спортивная смена «Лидеры»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "activity.team_sports",
+        "activity.endurance",
+        "social.leadership"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 16,
+      "format": "offline",
+      "starts_on": "2027-06-25",
+      "ends_on": "2027-07-15"
+    },
+    {
+      "program_id": "shift.little-explorers",
+      "kind": "shift",
+      "title": "Смена «Маленькие исследователи»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "science.biology",
+        "creative.drawing",
+        "activity.outdoor"
+      ],
+      "target_level": 1,
+      "age_min": 6,
+      "age_max": 9,
+      "format": "offline",
+      "starts_on": "2027-06-02",
+      "ends_on": "2027-06-15"
+    },
+    {
+      "program_id": "shift.startup",
+      "kind": "shift",
+      "title": "Смена «Стартап-академия»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "social.entrepreneurship",
+        "social.presentation",
+        "social.project_mgmt"
+      ],
+      "target_level": 3,
+      "age_min": 14,
+      "age_max": 17,
+      "format": "offline",
+      "starts_on": "2027-08-10",
+      "ends_on": "2027-08-30"
+    },
+    {
+      "program_id": "shift.english-outdoor",
+      "kind": "shift",
+      "title": "Языковая смена «English Outdoor»",
+      "issuer_id": "00000000-0000-4000-8000-000000000001",
+      "skill_tags": [
+        "social.english",
+        "activity.outdoor",
+        "social.teamwork"
+      ],
+      "target_level": 2,
+      "age_min": 9,
+      "age_max": 15,
+      "format": "offline",
+      "starts_on": "2027-07-18",
+      "ends_on": "2027-08-07"
+    },
+    {
+      "program_id": "course.python-start",
+      "kind": "course",
+      "title": "Python с нуля",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.python"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.python-pro",
+      "kind": "course",
+      "title": "Python: проекты и алгоритмы",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.python",
+        "science.math"
+      ],
+      "target_level": 3,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.scratch",
+      "kind": "course",
+      "title": "Первые игры на Scratch",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.scratch",
+        "tech.gamedev"
+      ],
+      "target_level": 2,
+      "age_min": 7,
+      "age_max": 11,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.web",
+      "kind": "course",
+      "title": "Сайты на HTML, CSS и JavaScript",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.web",
+        "creative.design"
+      ],
+      "target_level": 2,
+      "age_min": 11,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.ai-intro",
+      "kind": "course",
+      "title": "Введение в ИИ для школьников",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.ai",
+        "science.math",
+        "social.critical_thinking"
+      ],
+      "target_level": 2,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.unity",
+      "kind": "course",
+      "title": "Unity: 3D-игры",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.gamedev",
+        "tech.3d"
+      ],
+      "target_level": 3,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.math-olymp",
+      "kind": "course",
+      "title": "Олимпиадная математика",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "science.math",
+        "social.critical_thinking"
+      ],
+      "target_level": 3,
+      "age_min": 10,
+      "age_max": 16,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.english-speak",
+      "kind": "course",
+      "title": "Разговорный английский",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "social.english",
+        "social.presentation"
+      ],
+      "target_level": 2,
+      "age_min": 8,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.design",
+      "kind": "course",
+      "title": "Графический дизайн в Figma",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "creative.design",
+        "creative.drawing"
+      ],
+      "target_level": 2,
+      "age_min": 11,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.video",
+      "kind": "course",
+      "title": "Монтаж видео для блога",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "creative.video",
+        "creative.writing"
+      ],
+      "target_level": 2,
+      "age_min": 11,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.robotics-home",
+      "kind": "course",
+      "title": "Робототехника дома (Arduino)",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "tech.robotics",
+        "tech.electronics"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 15,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "course.astronomy",
+      "kind": "course",
+      "title": "Астрономия для любопытных",
+      "issuer_id": "00000000-0000-4000-8000-000000000002",
+      "skill_tags": [
+        "science.astronomy",
+        "science.physics"
+      ],
+      "target_level": 1,
+      "age_min": 8,
+      "age_max": 13,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.smart-camp",
+      "kind": "project_track",
+      "title": "Проект «Умный лагерь» (IoT)",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "tech.electronics",
+        "tech.python",
+        "social.teamwork"
+      ],
+      "target_level": 3,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "hybrid",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.eco",
+      "kind": "project_track",
+      "title": "Проект «Экология нашего леса»",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "science.biology",
+        "science.research",
+        "social.presentation"
+      ],
+      "target_level": 2,
+      "age_min": 9,
+      "age_max": 14,
+      "format": "hybrid",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.game-jam",
+      "kind": "project_track",
+      "title": "Гейм-джем за выходные",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "tech.gamedev",
+        "creative.design",
+        "social.teamwork"
+      ],
+      "target_level": 3,
+      "age_min": 11,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.chatbot",
+      "kind": "project_track",
+      "title": "Чат-бот для смены",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "tech.python",
+        "tech.ai",
+        "social.project_mgmt"
+      ],
+      "target_level": 3,
+      "age_min": 12,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.film",
+      "kind": "project_track",
+      "title": "Короткометражный фильм",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "creative.video",
+        "creative.theatre",
+        "social.leadership"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 17,
+      "format": "offline",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "project.business",
+      "kind": "project_track",
+      "title": "Бизнес-идея за 4 недели",
+      "issuer_id": "00000000-0000-4000-8000-000000000003",
+      "skill_tags": [
+        "social.entrepreneurship",
+        "science.math",
+        "social.presentation"
+      ],
+      "target_level": 3,
+      "age_min": 13,
+      "age_max": 17,
+      "format": "online",
+      "starts_on": null,
+      "ends_on": null
+    },
+    {
+      "program_id": "partner.sosny.drones",
+      "kind": "shift",
+      "title": "Смена «Небо» (беспилотники)",
+      "issuer_id": "00000000-0000-4000-8000-000000000101",
+      "skill_tags": [
+        "tech.drones",
+        "tech.electronics",
+        "social.teamwork"
+      ],
+      "target_level": 2,
+      "age_min": 11,
+      "age_max": 16,
+      "format": "offline",
+      "starts_on": "2027-07-01",
+      "ends_on": "2027-07-21"
+    },
+    {
+      "program_id": "partner.sosny.tourism",
+      "kind": "shift",
+      "title": "Туристическая смена",
+      "issuer_id": "00000000-0000-4000-8000-000000000101",
+      "skill_tags": [
+        "activity.outdoor",
+        "activity.endurance",
+        "social.leadership"
+      ],
+      "target_level": 2,
+      "age_min": 10,
+      "age_max": 16,
+      "format": "offline",
+      "starts_on": "2027-08-01",
+      "ends_on": "2027-08-21"
+    },
+    {
+      "program_id": "partner.volna.swim",
+      "kind": "shift",
+      "title": "Смена «Пловец»",
+      "issuer_id": "00000000-0000-4000-8000-000000000102",
+      "skill_tags": [
+        "activity.swimming",
+        "activity.regularity"
+      ],
+      "target_level": 2,
+      "age_min": 8,
+      "age_max": 14,
+      "format": "offline",
+      "starts_on": "2027-06-10",
+      "ends_on": "2027-06-30"
+    }
+  ]
+}
